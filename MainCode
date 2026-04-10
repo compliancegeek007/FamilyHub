@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <title>FamilyHub</title>
+  <script src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.23.3/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+    :root {
+      --bg: #F2F4F8;
+      --card: #FFFFFF;
+      --nav: #0A0F1E;
+      --accent: #5B5FED;
+      --accent2: #FF6B6B;
+      --text: #0A0F1E;
+      --subtext: #6B7280;
+      --border: #E5E7EB;
+      --radius: 20px;
+      --tag-kids: #7C3AED;
+      --tag-dinner: #D97706;
+      --tag-travel: #2563EB;
+      --tag-office: #475569;
+      --tag-medical: #DC2626;
+      --tag-birthday: #DB2777;
+      --tag-custom: #059669;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      max-width: 430px;
+      margin: 0 auto;
+      position: relative;
+      overflow-x: hidden;
+    }
+    #root { height: 100vh; display: flex; flex-direction: column; }
+    .screen { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .content-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .content-scroll::-webkit-scrollbar { display: none; }
+
+    /* Animations */
+    @keyframes fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+    @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.05); } }
+    @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+    .fade-up { animation: fadeUp 0.4s ease forwards; }
+    .fade-in { animation: fadeIn 0.3s ease forwards; }
+    .slide-up { animation: slideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      background: var(--nav);
+      display: flex;
+      padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 6px 0; cursor: pointer; transition: all 0.2s;
+      color: rgba(255,255,255,0.35); font-size: 10px; font-weight: 500; letter-spacing: 0.3px;
+    }
+    .nav-item.active { color: #FFFFFF; }
+    .nav-item svg { width: 22px; height: 22px; }
+    .nav-badge { background: var(--accent2); color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: -6px; margin-left: 12px; }
+
+    /* Header */
+    .app-header {
+      background: white; padding: 16px 20px 12px;
+      padding-top: calc(16px + env(safe-area-inset-top));
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .header-title { font-size: 17px; font-weight: 700; color: var(--text); }
+    .header-sub { font-size: 12px; color: var(--subtext); margin-top: 1px; }
+
+    /* Cards */
+    .card { background: var(--card); border-radius: var(--radius); padding: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .card-sm { background: var(--card); border-radius: 14px; padding: 14px; box-shadow: 0 1px 8px rgba(0,0,0,0.05); }
+
+    /* Tag pills */
+    .tag-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 100px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.4px; text-transform: uppercase; color: white;
+    }
+    .tag-KIDS { background: var(--tag-kids); }
+    .tag-DINNER { background: var(--tag-dinner); }
+    .tag-TRAVEL { background: var(--tag-travel); }
+    .tag-OFFICE { background: var(--tag-office); }
+    .tag-MEDICAL { background: var(--tag-medical); }
+    .tag-BIRTHDAY { background: var(--tag-birthday); }
+    .tag-CUSTOM { background: var(--tag-custom); }
+
+    /* Buttons */
+    .btn-primary {
+      background: var(--accent); color: white; border: none; cursor: pointer;
+      border-radius: 14px; padding: 16px 24px; font-size: 16px; font-weight: 600;
+      width: 100%; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary:active { transform: scale(0.97); opacity: 0.9; }
+    .btn-secondary {
+      background: transparent; color: var(--text); border: 1.5px solid var(--border); cursor: pointer;
+      border-radius: 14px; padding: 15px 24px; font-size: 16px; font-weight: 600;
+      width: 100%; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-secondary:active { transform: scale(0.97); }
+    .btn-ghost { background: none; border: none; cursor: pointer; color: var(--accent); font-size: 15px; font-weight: 600; padding: 8px; }
+    .btn-icon { background: var(--bg); border: none; cursor: pointer; border-radius: 12px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+
+    /* Avatar */
+    .avatar { border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; flex-shrink: 0; }
+    .avatar-sm { width: 28px; height: 28px; font-size: 11px; }
+    .avatar-md { width: 40px; height: 40px; font-size: 15px; }
+    .avatar-lg { width: 56px; height: 56px; font-size: 20px; }
+
+    /* FAB */
+    .fab {
+      position: fixed; bottom: calc(84px + env(safe-area-inset-bottom)); right: 20px;
+      width: 56px; height: 56px; border-radius: 18px; background: var(--accent);
+      border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 24px rgba(91,95,237,0.4); z-index: 40; transition: all 0.2s;
+    }
+    .fab:active { transform: scale(0.93); }
+
+    /* Modal overlay */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100;
+      display: flex; flex-direction: column; justify-content: flex-end;
+    }
+    .modal-sheet {
+      background: white; border-radius: 24px 24px 0 0; padding: 0;
+      max-height: 94vh; display: flex; flex-direction: column;
+    }
+    .modal-handle { width: 36px; height: 4px; background: #E5E7EB; border-radius: 2px; margin: 12px auto; }
+    .modal-header { padding: 4px 20px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+    .modal-body { flex: 1; overflow-y: auto; padding: 20px; scrollbar-width: none; }
+    .modal-body::-webkit-scrollbar { display: none; }
+    .modal-footer { padding: 16px 20px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); }
+
+    /* Form */
+    .form-group { margin-bottom: 20px; }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--subtext); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block; }
+    .form-input {
+      width: 100%; padding: 14px 16px; border: 1.5px solid var(--border); border-radius: 14px;
+      font-size: 16px; color: var(--text); background: white; outline: none;
+      font-family: inherit; transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: var(--accent); }
+    .form-input::placeholder { color: #9CA3AF; }
+    textarea.form-input { resize: none; min-height: 80px; }
+
+    /* Calendar grid */
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .cal-cell { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 6px; border-radius: 10px; cursor: pointer; transition: all 0.15s; position: relative; }
+    .cal-cell:active { background: var(--bg); }
+    .cal-day-num { font-size: 14px; font-weight: 500; line-height: 1; }
+    .cal-day-dots { display: flex; gap: 2px; margin-top: 3px; }
+    .cal-dot { width: 4px; height: 4px; border-radius: 50%; }
+    .cal-cell.today .cal-day-num { background: var(--accent); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .cal-cell.selected .cal-day-num { background: var(--nav); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .cal-cell.other-month .cal-day-num { color: #D1D5DB; }
+
+    /* Event card */
+    .event-card { background: white; border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; box-shadow: 0 1px 8px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.15s; margin-bottom: 8px; }
+    .event-card:active { transform: scale(0.98); }
+    .event-time-bar { width: 3px; border-radius: 2px; min-height: 44px; flex-shrink: 0; }
+    .event-info { flex: 1; }
+    .event-title { font-size: 15px; font-weight: 600; color: var(--text); }
+    .event-meta { font-size: 12px; color: var(--subtext); margin-top: 2px; }
+    .event-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+
+    /* Notification toast */
+    .toast {
+      position: fixed; top: calc(20px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+      background: var(--nav); color: white; padding: 12px 20px; border-radius: 14px; font-size: 14px; font-weight: 500;
+      z-index: 999; white-space: nowrap; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      animation: fadeUp 0.3s ease forwards;
+    }
+
+    /* Ingestion source cards */
+    .source-card {
+      background: white; border-radius: 16px; padding: 16px;
+      display: flex; align-items: center; gap: 14px;
+      border: 1.5px solid var(--border); cursor: pointer; transition: all 0.2s; margin-bottom: 12px;
+    }
+    .source-card:active { transform: scale(0.98); border-color: var(--accent); }
+    .source-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+
+    /* Segmented control */
+    .seg-ctrl { background: var(--bg); border-radius: 12px; padding: 3px; display: flex; }
+    .seg-btn { flex: 1; padding: 8px; border: none; background: transparent; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--subtext); transition: all 0.2s; }
+    .seg-btn.active { background: white; color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+    /* Checkbox */
+    .check-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .check-row:last-child { border-bottom: none; }
+    .checkbox { width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+    .checkbox.checked { background: var(--accent); border-color: var(--accent); }
+
+    /* Loading spinner */
+    .spinner { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+    /* Scrollable tag row */
+    .tag-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+    .tag-scroll::-webkit-scrollbar { display: none; }
+    .tag-filter { padding: 6px 14px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1.5px solid var(--border); background: white; cursor: pointer; white-space: nowrap; color: var(--subtext); transition: all 0.15s; }
+    .tag-filter.active { background: var(--text); color: white; border-color: var(--text); }
+
+    /* Avatar group */
+    .avatar-group { display: flex; }
+    .avatar-group .avatar { border: 2px solid white; margin-left: -8px; }
+    .avatar-group .avatar:first-child { margin-left: 0; }
+
+    /* Status badge */
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .status-online { background: #10B981; }
+    .status-pending { background: #F59E0B; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+
+const TAG_COLORS = {
+  'KIDS CLASSES': { bg: '#7C3AED', cls: 'tag-KIDS' },
+  'DINNER': { bg: '#D97706', cls: 'tag-DINNER' },
+  'TRAVEL': { bg: '#2563EB', cls: 'tag-TRAVEL' },
+  'OFFICE': { bg: '#475569', cls: 'tag-OFFICE' },
+  'MEDICAL': { bg: '#DC2626', cls: 'tag-MEDICAL' },
+  'BIRTHDAY': { bg: '#DB2777', cls: 'tag-BIRTHDAY' },
+  'YOGA': { bg: '#059669', cls: 'tag-CUSTOM' },
+  'DATE NIGHT': { bg: '#9333EA', cls: 'tag-CUSTOM' },
+};
+
+const FAMILY = [
+  { id: 1, name: 'Punit', role: 'Hub Admin', initials: 'PB', color: '#5B5FED', email: 'punit.bafna@gmail.com', phone: '+44 7700 900000' },
+  { id: 2, name: 'Priya', role: 'Parent', initials: 'PR', color: '#DB2777', email: 'priya.bafna@gmail.com', phone: '+44 7700 900001' },
+  { id: 3, name: 'Arjun', role: 'Kid', initials: 'AR', color: '#059669', email: 'arjun.bafna@gmail.com', phone: '+44 7700 900002' },
+  { id: 4, name: 'Mia', role: 'Kid', initials: 'MI', color: '#D97706', email: 'mia.bafna@gmail.com', phone: '+44 7700 900003' },
+];
+
+const INITIAL_EVENTS = [
+  { id: 1, title: 'School Pickup – Arjun & Mia', date: '2026-04-10', time: '15:30', endTime: '16:00', tag: 'KIDS CLASSES', members: [1,2], note: 'Both kids today, Priya to collect', location: 'St. Mary's Primary School' },
+  { id: 2, title: 'Dentist – Mia', date: '2026-04-11', time: '10:00', endTime: '11:00', tag: 'MEDICAL', members: [4,1], note: 'Annual check-up + cleaning', location: 'Highgate Dental Practice' },
+  { id: 3, title: 'Team Lunch – Deloitte', date: '2026-04-12', time: '12:30', endTime: '14:00', tag: 'OFFICE', members: [1], note: '', location: 'The Ivy, Covent Garden' },
+  { id: 4, title: 'Arjun's Football Training', date: '2026-04-14', time: '17:00', endTime: '18:30', tag: 'KIDS CLASSES', members: [3,1], note: 'Bring shin guards', location: 'Hampstead Heath Football Club' },
+  { id: 5, title: 'Dinner at the Sharma's', date: '2026-04-15', time: '19:30', endTime: '22:00', tag: 'DINNER', members: [1,2], note: 'RSVP confirmed, bring wine', location: '24 Elgin Crescent, London' },
+  { id: 6, title: 'Mia's Ballet Class', date: '2026-04-16', time: '16:00', endTime: '17:00', tag: 'KIDS CLASSES', members: [4,2], note: '', location: 'Royal Ballet School, Covent Garden' },
+  { id: 7, title: 'Dubai – Family Trip ✈️', date: '2026-04-18', time: '08:15', endTime: '14:00', tag: 'TRAVEL', members: [1,2,3,4], note: 'EK004 · Heathrow T3 · Check-in 05:45', location: 'Dubai, UAE' },
+  { id: 8, title: 'Dubai – Day 2', date: '2026-04-19', time: '10:00', endTime: '20:00', tag: 'TRAVEL', members: [1,2,3,4], note: 'Desert Safari 4pm', location: 'Dubai, UAE' },
+  { id: 9, title: 'Dubai – Day 3 / Return', date: '2026-04-20', time: '21:00', endTime: '23:59', tag: 'TRAVEL', members: [1,2,3,4], note: 'EK005 · Land 06:00 Apr 21', location: 'Dubai → London' },
+  { id: 10, title: 'GP Appointment – Punit', date: '2026-04-22', time: '09:00', endTime: '09:30', tag: 'MEDICAL', members: [1], note: 'Annual health check', location: 'Highgate Surgery' },
+  { id: 11, title: 'Priya's Birthday Dinner 🎂', date: '2026-04-25', time: '20:00', endTime: '23:00', tag: 'BIRTHDAY', members: [1,2,3,4], note: 'Reservation for 8 — Nobu', location: 'Nobu London, Park Lane' },
+  { id: 12, title: 'Mia's School Play', date: '2026-04-26', time: '14:00', endTime: '16:00', tag: 'KIDS CLASSES', members: [1,2,4], note: 'Front row seats booked', location: 'St. Mary's Hall' },
+  { id: 13, title: 'Client Presentation', date: '2026-04-28', time: '10:00', endTime: '12:00', tag: 'OFFICE', members: [1], note: 'Big 4 review — board deck ready', location: 'Canary Wharf' },
+  { id: 14, title: 'Month-End Family Dinner', date: '2026-04-30', time: '19:00', endTime: '21:30', tag: 'DINNER', members: [1,2,3,4], note: 'Monthly tradition', location: 'Home' },
+];
+
+const PENDING_TAGS = [
+  { id: 't1', name: 'YOGA', submittedBy: 2, submittedName: 'Priya', note: 'Weekly yoga sessions on Tuesday evenings' },
+  { id: 't2', name: 'DATE NIGHT', submittedBy: 1, submittedName: 'Punit', note: 'Monthly couples evenings' },
+];
+
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// ─── ICON COMPONENTS ─────────────────────────────────────────────────────────
+
+const Icon = ({ name, size = 22, color = 'currentColor', strokeWidth = 1.8 }) => {
+  const paths = {
+    calendar: <><rect x="3" y="4" width="18" height="18" rx="3" ry="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
+    list: <><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></>,
+    users: <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
+    tag: <><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></>,
+    settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>,
+    plus: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>,
+    x: <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
+    chevRight: <polyline points="9 18 15 12 9 6"/>,
+    chevLeft: <polyline points="15 18 9 12 15 6"/>,
+    chevDown: <polyline points="6 9 12 15 18 9"/>,
+    clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+    mapPin: <><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></>,
+    bell: <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>,
+    mail: <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>,
+    phone: <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13 19.79 19.79 0 0 1 1.61 4.37 2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 17z"/>,
+    check: <polyline points="20 6 9 12 4 10"/>,
+    checkCircle: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>,
+    trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></>,
+    edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>,
+    download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>,
+    zap: <><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></>,
+    userPlus: <><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></>,
+    shield: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></>,
+    send: <><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></>,
+    info: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>,
+    home: <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>,
+    filter: <><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></>,
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+      {paths[name]}
+    </svg>
+  );
+};
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+const getTagColor = (tag) => TAG_COLORS[tag]?.bg || '#6B7280';
+const getTagClass = (tag) => {
+  const map = { 'KIDS CLASSES':'KIDS', 'DINNER':'DINNER', 'TRAVEL':'TRAVEL', 'OFFICE':'OFFICE', 'MEDICAL':'MEDICAL', 'BIRTHDAY':'BIRTHDAY' };
+  return `tag-${map[tag] || 'CUSTOM'}`;
+};
+
+const getMember = (id) => FAMILY.find(m => m.id === id);
+
+const formatTime = (t) => {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  return `${h % 12 || 12}:${String(m).padStart(2,'0')} ${ampm}`;
+};
+
+const today = new Date(2026, 3, 10); // April 10, 2026
+
+function buildCalendar(year, month) {
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrev = new Date(year, month, 0).getDate();
+  const cells = [];
+  for (let i = firstDay - 1; i >= 0; i--) cells.push({ day: daysInPrev - i, current: false });
+  for (let i = 1; i <= daysInMonth; i++) cells.push({ day: i, current: true });
+  while (cells.length < 42) cells.push({ day: cells.length - firstDay - daysInMonth + 1, current: false });
+  return cells;
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+
+function Toast({ msg, icon }) {
+  return (
+    <div className="toast fade-in">
+      {icon && <span style={{marginRight:6}}>{icon}</span>}{msg}
+    </div>
+  );
+}
+
+// ─── LOGIN SCREEN ─────────────────────────────────────────────────────────────
+
+function LoginScreen({ onLogin }) {
+  const [mode, setMode] = useState('main'); // main | otp
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState(['','','','','','']);
+  const [loading, setLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const otpRefs = useRef([]);
+
+  const handleGoogle = () => {
+    setLoading(true);
+    setTimeout(() => onLogin(), 1400);
+  };
+
+  const handleSendOtp = () => {
+    if (phone.length < 8) return;
+    setLoading(true);
+    setTimeout(() => { setLoading(false); setMode('otp'); setOtpSent(true); }, 1200);
+  };
+
+  const handleOtpChange = (i, v) => {
+    if (!/^\d?$/.test(v)) return;
+    const next = [...otp]; next[i] = v;
+    setOtp(next);
+    if (v && i < 5) otpRefs.current[i+1]?.focus();
+    if (next.every(d => d)) { setLoading(true); setTimeout(() => onLogin(), 1000); }
+  };
+
+  return (
+    <div style={{ minHeight:'100vh', background:'#0A0F1E', display:'flex', flexDirection:'column', padding:'0 28px', paddingTop:'env(safe-area-inset-top)' }}>
+      {/* Hero */}
+      <div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center', paddingTop:60 }}>
+        {/* Logo */}
+        <div style={{ width:80, height:80, borderRadius:24, background:'linear-gradient(135deg,#5B5FED,#8B5CF6)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:24, boxShadow:'0 16px 48px rgba(91,95,237,0.4)' }}>
+          <Icon name="home" size={36} color="white" />
+        </div>
+        <div style={{ fontSize:34, fontWeight:800, color:'white', letterSpacing:-0.5, textAlign:'center' }}>FamilyHub</div>
+        <div style={{ fontSize:16, color:'rgba(255,255,255,0.45)', marginTop:8, textAlign:'center', lineHeight:1.5 }}>
+          Your family, always in sync
+        </div>
+
+        {/* Features */}
+        <div style={{ marginTop:40, width:'100%', display:'flex', flexDirection:'column', gap:12 }}>
+          {[
+            { icon:'calendar', label:'Shared family calendar' },
+            { icon:'zap', label:'Auto-import from Gmail & WhatsApp' },
+            { icon:'bell', label:'Instant family notifications' },
+          ].map(f => (
+            <div key={f.label} style={{ display:'flex', alignItems:'center', gap:14, padding:'12px 16px', background:'rgba(255,255,255,0.05)', borderRadius:14 }}>
+              <div style={{ width:36, height:36, borderRadius:10, background:'rgba(91,95,237,0.25)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <Icon name={f.icon} size={18} color="#5B5FED" />
+              </div>
+              <span style={{ color:'rgba(255,255,255,0.75)', fontSize:15, fontWeight:500 }}>{f.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Auth */}
+      <div style={{ paddingBottom:'calc(40px + env(safe-area-inset-bottom))' }}>
+        {mode === 'main' ? (
+          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            <button className="btn-primary" style={{ background:'white', color:'#0A0F1E', fontSize:15 }} onClick={handleGoogle} disabled={loading}>
+              {loading ? <div className="spinner" style={{ borderTopColor:'#0A0F1E', borderColor:'rgba(0,0,0,0.15)' }}/> : <>
+                <span style={{ fontSize:20, lineHeight:1 }}>G</span>
+                Continue with Google
+              </>}
+            </button>
+            <div style={{ display:'flex', alignItems:'center', gap:10, margin:'4px 0' }}>
+              <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.1)' }}/>
+              <span style={{ color:'rgba(255,255,255,0.3)', fontSize:13 }}>or</span>
+              <div style={{ flex:1, height:1, background:'rgba(255,255,255,0.1)' }}/>
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              <input
+                className="form-input"
+                style={{ flex:1, background:'rgba(255,255,255,0.07)', border:'1.5px solid rgba(255,255,255,0.12)', color:'white', borderRadius:14 }}
+                placeholder="Phone number"
+                value={phone} onChange={e => setPhone(e.target.value)}
+                type="tel"
+              />
+              <button className="btn-primary" style={{ width:'auto', padding:'0 20px', borderRadius:14, fontSize:14 }} onClick={handleSendOtp} disabled={loading}>
+                {loading ? <div className="spinner"/> : 'Send OTP'}
+              </button>
+            </div>
+            <p style={{ color:'rgba(255,255,255,0.25)', fontSize:12, textAlign:'center', marginTop:8 }}>
+              By continuing you agree to our Terms & Privacy Policy
+            </p>
+          </div>
+        ) : (
+          <div className="fade-up">
+            <p style={{ color:'rgba(255,255,255,0.6)', fontSize:15, textAlign:'center', marginBottom:24 }}>
+              Enter the 6-digit code sent to<br/>
+              <span style={{ color:'white', fontWeight:600 }}>{phone}</span>
+            </p>
+            <div style={{ display:'flex', gap:8, justifyContent:'center', marginBottom:28 }}>
+              {otp.map((d, i) => (
+                <input
+                  key={i}
+                  ref={el => otpRefs.current[i] = el}
+                  value={d}
+                  onChange={e => handleOtpChange(i, e.target.value)}
+                  maxLength={1}
+                  style={{
+                    width:46, height:54, textAlign:'center', fontSize:22, fontWeight:700,
+                    background:'rgba(255,255,255,0.07)', border:`2px solid ${d ? '#5B5FED' : 'rgba(255,255,255,0.12)'}`,
+                    borderRadius:14, color:'white', outline:'none'
+                  }}
+                />
+              ))}
+            </div>
+            {loading && <div style={{ display:'flex', justifyContent:'center', marginBottom:16 }}><div className="spinner" style={{ borderColor:'rgba(255,255,255,0.2)', borderTopColor:'white' }}/></div>}
+            <button className="btn-ghost" style={{ width:'100%', color:'rgba(255,255,255,0.45)', fontSize:14 }} onClick={() => setMode('main')}>← Back</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── TAG PILL ─────────────────────────────────────────────────────────────────
+
+function TagPill({ tag, size = 'sm' }) {
+  return (
+    <span className={`tag-pill ${getTagClass(tag)}`} style={{ background: getTagColor(tag), fontSize: size === 'lg' ? 12 : 10 }}>
+      {tag}
+    </span>
+  );
+}
+
+// ─── MEMBER AVATAR ────────────────────────────────────────────────────────────
+
+function MemberAvatar({ member, size = 'sm' }) {
+  const cls = size === 'lg' ? 'avatar-lg' : size === 'md' ? 'avatar-md' : 'avatar-sm';
+  return (
+    <div className={`avatar ${cls}`} style={{ background: member?.color || '#6B7280' }} title={member?.name}>
+      {member?.initials}
+    </div>
+  );
+}
+
+// ─── EVENT DETAIL MODAL ───────────────────────────────────────────────────────
+
+function EventDetailModal({ event, onClose, onEdit, onDelete, onNotify }) {
+  const [notifying, setNotifying] = useState(false);
+
+  const handleNotify = () => {
+    setNotifying(true);
+    setTimeout(() => { setNotifying(false); onNotify(); }, 1200);
+  };
+
+  return (
+    <div className="modal-overlay fade-in" onClick={onClose}>
+      <div className="modal-sheet slide-up" onClick={e => e.stopPropagation()}>
+        <div className="modal-handle"/>
+        <div className="modal-header">
+          <div>
+            <TagPill tag={event.tag} size="sm"/>
+          </div>
+          <div style={{ display:'flex', gap:8 }}>
+            <button className="btn-icon" onClick={onEdit}><Icon name="edit" size={18} color="#5B5FED"/></button>
+            <button className="btn-icon" onClick={onClose}><Icon name="x" size={18} color="#6B7280"/></button>
+          </div>
+        </div>
+        <div className="modal-body">
+          <h2 style={{ fontSize:22, fontWeight:700, marginBottom:16, lineHeight:1.3 }}>{event.title}</h2>
+
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
+              <div style={{ width:36, height:36, borderRadius:10, background:'#F0F4FF', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <Icon name="clock" size={18} color="#5B5FED"/>
+              </div>
+              <div>
+                <div style={{ fontWeight:600, fontSize:15 }}>{new Date(event.date + 'T00:00').toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}</div>
+                <div style={{ color:'#6B7280', fontSize:13, marginTop:2 }}>{formatTime(event.time)}{event.endTime ? ` – ${formatTime(event.endTime)}` : ''}</div>
+              </div>
+            </div>
+
+            {event.location && (
+              <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
+                <div style={{ width:36, height:36, borderRadius:10, background:'#F0F4FF', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <Icon name="mapPin" size={18} color="#5B5FED"/>
+                </div>
+                <div style={{ fontWeight:500, fontSize:15, alignSelf:'center' }}>{event.location}</div>
+              </div>
+            )}
+
+            {event.note && (
+              <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
+                <div style={{ width:36, height:36, borderRadius:10, background:'#F0F4FF', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <Icon name="info" size={18} color="#5B5FED"/>
+                </div>
+                <div style={{ fontSize:14, color:'#374151', lineHeight:1.5, alignSelf:'center' }}>{event.note}</div>
+              </div>
+            )}
+
+            <div>
+              <div style={{ fontSize:12, fontWeight:600, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:0.5, marginBottom:10 }}>Who's involved</div>
+              <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+                {event.members.map(mid => {
+                  const m = getMember(mid);
+                  return m ? (
+                    <div key={mid} style={{ display:'flex', alignItems:'center', gap:8, background:'#F8FAFC', borderRadius:10, padding:'6px 12px 6px 6px' }}>
+                      <MemberAvatar member={m} size="sm"/>
+                      <span style={{ fontSize:13, fontWeight:600 }}>{m.name}</span>
+                    </div>
+                  ) : null;
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="modal-footer" style={{ display:'flex', gap:8 }}>
+          <button onClick={() => onDelete(event.id)} style={{ flex:0, background:'#FEF2F2', border:'none', borderRadius:12, padding:'0 16px', height:50, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <Icon name="trash" size={18} color="#DC2626"/>
+          </button>
+          <button className="btn-primary" style={{ flex:1, height:50, borderRadius:12 }} onClick={handleNotify} disabled={notifying}>
+            {notifying ? <div className="spinner"/> : <><Icon name="send" size={17} color="white"/> Notify Family</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ADD / EDIT EVENT MODAL ───────────────────────────────────────────────────
+
+function EventModal({ event, existingTags, onClose, onSave }) {
+  const [form, setForm] = useState(event ? { ...event } : {
+    title:'', date: today.toISOString().split('T')[0], time:'12:00', endTime:'13:00',
+    tag:'DINNER', members:[1], note:'', location:''
+  });
+  const [showTagPicker, setShowTagPicker] = useState(false);
+
+  const set = (k, v) => setForm(prev => ({...prev, [k]: v}));
+  const toggleMember = (id) => set('members', form.members.includes(id) ? form.members.filter(m => m!==id) : [...form.members, id]);
+  const valid = form.title.trim().length > 0 && form.date && form.time;
+
+  return (
+    <div className="modal-overlay fade-in" onClick={onClose}>
+      <div className="modal-sheet slide-up" style={{ maxHeight:'96vh' }} onClick={e => e.stopPropagation()}>
+        <div className="modal-handle"/>
+        <div className="modal-header">
+          <span style={{ fontSize:18, fontWeight:700 }}>{event ? 'Edit Event' : 'New Event'}</span>
+          <button className="btn-icon" onClick={onClose}><Icon name="x" size={18} color="#6B7280"/></button>
+        </div>
+        <div className="modal-body">
+          <div className="form-group">
+            <label className="form-label">Event Title</label>
+            <input className="form-input" placeholder="What's happening?" value={form.title} onChange={e => set('title', e.target.value)}/>
+          </div>
+
+          <div className="form-group" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+            <div>
+              <label className="form-label">Date</label>
+              <input type="date" className="form-input" value={form.date} onChange={e => set('date', e.target.value)}/>
+            </div>
+            <div>
+              <label className="form-label">Start Time</label>
+              <input type="time" className="form-input" value={form.time} onChange={e => set('time', e.target.value)}/>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Location</label>
+            <input className="form-input" placeholder="Add location (optional)" value={form.location} onChange={e => set('location', e.target.value)}/>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Tag</label>
+            <div className="tag-scroll" style={{ paddingBottom:8 }}>
+              {existingTags.map(t => (
+                <button key={t} onClick={() => set('tag', t)}
+                  style={{ padding:'6px 14px', borderRadius:100, border:`2px solid ${form.tag===t ? getTagColor(t) : '#E5E7EB'}`,
+                    background: form.tag===t ? getTagColor(t) : 'white', color: form.tag===t ? 'white' : '#374151',
+                    fontSize:11, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', letterSpacing:0.3 }}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Who's involved</label>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+              {FAMILY.map(m => (
+                <button key={m.id} onClick={() => toggleMember(m.id)}
+                  style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 12px 6px 6px',
+                    border:`2px solid ${form.members.includes(m.id) ? m.color : '#E5E7EB'}`,
+                    borderRadius:100, background: form.members.includes(m.id) ? m.color+'15' : 'white', cursor:'pointer' }}>
+                  <MemberAvatar member={m} size="sm"/>
+                  <span style={{ fontSize:13, fontWeight:600, color: form.members.includes(m.id) ? m.color : '#374151' }}>{m.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Notes</label>
+            <textarea className="form-input" placeholder="Any additional notes..." value={form.note} onChange={e => set('note', e.target.value)}/>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn-primary" onClick={() => onSave(form)} disabled={!valid}>
+            <Icon name="checkCircle" size={18} color="white"/>
+            {event ? 'Update Event' : 'Add to Calendar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── CALENDAR TAB ─────────────────────────────────────────────────────────────
+
+function CalendarTab({ events, onEventClick, onAddEvent }) {
+  const [year, setYear] = useState(2026);
+  const [month, setMonth] = useState(3); // April
+  const [selectedDay, setSelectedDay] = useState(10);
+
+  const cells = buildCalendar(year, month);
+  const dateStr = `${year}-${String(month+1).padStart(2,'0')}`;
+  const eventsByDay = {};
+  events.forEach(e => { const d = parseInt(e.date.split('-')[2]); if (e.date.startsWith(dateStr)) { if (!eventsByDay[d]) eventsByDay[d] = []; eventsByDay[d].push(e); } });
+  const selKey = `${dateStr}-${String(selectedDay).padStart(2,'0')}`;
+  const dayEvents = events.filter(e => e.date === selKey).sort((a,b) => a.time.localeCompare(b.time));
+
+  const prevMonth = () => { if (month === 0) { setYear(y=>y-1); setMonth(11); } else setMonth(m=>m-1); setSelectedDay(1); };
+  const nextMonth = () => { if (month === 11) { setYear(y=>y+1); setMonth(0); } else setMonth(m=>m+1); setSelectedDay(1); };
+
+  return (
+    <div className="content-scroll" style={{ padding:'0 16px 100px' }}>
+      {/* Month nav */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 0 12px' }}>
+        <button className="btn-icon" onClick={prevMonth}><Icon name="chevLeft" size={20} color="#374151"/></button>
+        <span style={{ fontSize:17, fontWeight:700 }}>{MONTHS[month]} {year}</span>
+        <button className="btn-icon" onClick={nextMonth}><Icon name="chevRight" size={20} color="#374151"/></button>
+      </div>
+
+      {/* Day headers */}
+      <div className="cal-grid" style={{ marginBottom:4 }}>
+        {DAYS.map(d => <div key={d} style={{ textAlign:'center', fontSize:11, fontWeight:600, color:'#9CA3AF', padding:'4px 0' }}>{d}</div>)}
+      </div>
+
+      {/* Calendar grid */}
+      <div className="card" style={{ padding:10, marginBottom:16 }}>
+        <div className="cal-grid">
+          {cells.map((cell, i) => {
+            const isToday = cell.current && year === 2026 && month === 3 && cell.day === 10;
+            const isSel = cell.current && cell.day === selectedDay;
+            const dots = cell.current ? (eventsByDay[cell.day] || []) : [];
+            return (
+              <div key={i} className={`cal-cell${isToday && !isSel ? ' today' : ''}${isSel ? ' selected' : ''}${!cell.current ? ' other-month' : ''}`}
+                onClick={() => cell.current && setSelectedDay(cell.day)}>
+                <span className="cal-day-num">{cell.day}</span>
+                <div className="cal-day-dots">
+                  {dots.slice(0,3).map((e,j) => <div key={j} className="cal-dot" style={{ background: getTagColor(e.tag) }}/>)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Day events */}
+      <div style={{ fontSize:13, fontWeight:600, color:'#9CA3AF', marginBottom:10, textTransform:'uppercase', letterSpacing:0.5 }}>
+        {selectedDay} {MONTHS[month].slice(0,3)} · {dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''}
+      </div>
+      {dayEvents.length === 0 ? (
+        <div style={{ textAlign:'center', padding:'32px 0', color:'#9CA3AF' }}>
+          <Icon name="calendar" size={40} color="#E5E7EB"/>
+          <p style={{ marginTop:12, fontSize:15 }}>No events this day</p>
+          <button className="btn-ghost" onClick={onAddEvent} style={{ marginTop:8 }}>+ Add event</button>
+        </div>
+      ) : dayEvents.map(e => <EventCard key={e.id} event={e} onClick={() => onEventClick(e)}/>)}
+    </div>
+  );
+}
+
+// ─── EVENT CARD ───────────────────────────────────────────────────────────────
+
+function EventCard({ event, onClick }) {
+  const color = getTagColor(event.tag);
+  return (
+    <div className="event-card" onClick={onClick}>
+      <div className="event-time-bar" style={{ background: color }}/>
+      <div className="event-info">
+        <div className="event-title">{event.title}</div>
+        <div className="event-meta">{formatTime(event.time)}{event.endTime ? ` – ${formatTime(event.endTime)}` : ''}{event.location ? ` · ${event.location.split(',')[0]}` : ''}</div>
+        <div className="event-footer">
+          <TagPill tag={event.tag}/>
+          <div className="avatar-group">
+            {event.members.slice(0,3).map(mid => { const m = getMember(mid); return m ? <MemberAvatar key={mid} member={m} size="sm"/> : null; })}
+            {event.members.length > 3 && <div className="avatar avatar-sm" style={{ background:'#E5E7EB', color:'#6B7280', fontSize:9, border:'2px solid white', marginLeft:-8 }}>+{event.members.length-3}</div>}
+          </div>
+        </div>
+      </div>
+      <Icon name="chevRight" size={16} color="#D1D5DB"/>
+    </div>
+  );
+}
+
+// ─── EVENTS TAB ───────────────────────────────────────────────────────────────
+
+function EventsTab({ events, onEventClick, onAddEvent }) {
+  const [filter, setFilter] = useState('ALL');
+  const allTags = ['ALL', ...Object.keys(TAG_COLORS)];
+  const filtered = filter === 'ALL' ? events : events.filter(e => e.tag === filter);
+  const sorted = [...filtered].sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+
+  // Group by date
+  const groups = {};
+  sorted.forEach(e => { if (!groups[e.date]) groups[e.date] = []; groups[e.date].push(e); });
+
+  return (
+    <div className="content-scroll" style={{ padding:'0 16px 100px' }}>
+      <div style={{ padding:'16px 0 12px' }}>
+        <div className="tag-scroll">
+          {allTags.map(t => (
+            <button key={t} className={`tag-filter${filter===t?' active':''}`} onClick={() => setFilter(t)}>
+              {t === 'ALL' ? '✦ All' : t}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {Object.entries(groups).map(([date, evs]) => {
+        const d = new Date(date + 'T00:00');
+        const isToday = date === '2026-04-10';
+        return (
+          <div key={date} style={{ marginBottom:20 }}>
+            <div style={{ fontSize:13, fontWeight:700, color: isToday ? '#5B5FED' : '#374151', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>
+              {isToday && <span style={{ background:'#5B5FED', color:'white', fontSize:10, padding:'1px 6px', borderRadius:6 }}>TODAY</span>}
+              {d.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' })}
+            </div>
+            {evs.map(e => <EventCard key={e.id} event={e} onClick={() => onEventClick(e)}/>)}
+          </div>
+        );
+      })}
+
+      {filtered.length === 0 && (
+        <div style={{ textAlign:'center', padding:'60px 20px', color:'#9CA3AF' }}>
+          <Icon name="filter" size={40} color="#E5E7EB"/>
+          <p style={{ marginTop:12, fontSize:15 }}>No events with this tag</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── FAMILY TAB ───────────────────────────────────────────────────────────────
+
+function FamilyTab({ onShowIngestion }) {
+  const [inviteModal, setInviteModal] = useState(false);
+  const [form, setForm] = useState({ name:'', email:'', phone:'', role:'Parent' });
+  const [sent, setSent] = useState(false);
+
+  const handleInvite = () => {
+    setSent(true);
+    setTimeout(() => { setInviteModal(false); setSent(false); setForm({ name:'', email:'', phone:'', role:'Parent' }); }, 1500);
+  };
+
+  return (
+    <div className="content-scroll" style={{ padding:'0 16px 100px' }}>
+      {/* Household header */}
+      <div className="card" style={{ margin:'16px 0', background:'linear-gradient(135deg,#0A0F1E,#1e2460)', color:'white' }}>
+        <div style={{ fontSize:12, opacity:0.5, fontWeight:600, letterSpacing:0.5, textTransform:'uppercase' }}>Your Household</div>
+        <div style={{ fontSize:22, fontWeight:800, marginTop:4 }}>Bafna Family</div>
+        <div style={{ display:'flex', marginTop:16, gap:-8 }}>
+          <div className="avatar-group">
+            {FAMILY.map(m => <MemberAvatar key={m.id} member={m} size="md"/>)}
+          </div>
+        </div>
+        <div style={{ marginTop:12, fontSize:13, opacity:0.5 }}>{FAMILY.length} members · Hub Admin: Punit</div>
+      </div>
+
+      {/* Members list */}
+      <div style={{ fontSize:12, fontWeight:600, color:'#9CA3AF', letterSpacing:0.5, textTransform:'uppercase', marginBottom:10 }}>Members</div>
+      <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:24 }}>
+        {FAMILY.map(m => (
+          <div key={m.id} className="card-sm" style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <MemberAvatar member={m} size="md"/>
+            <div style={{ flex:1 }}>
+              <div style={{ fontWeight:700, fontSize:15, display:'flex', alignItems:'center', gap:6 }}>
+                {m.name}
+                {m.role === 'Hub Admin' && <span style={{ background:'#5B5FED', color:'white', fontSize:9, padding:'1px 7px', borderRadius:6, fontWeight:700 }}>ADMIN</span>}
+              </div>
+              <div style={{ fontSize:12, color:'#6B7280', marginTop:1 }}>{m.role} · {m.email}</div>
+            </div>
+            <span className="status-dot status-online"/>
+          </div>
+        ))}
+      </div>
+
+      {/* Ingestion */}
+      <div style={{ fontSize:12, fontWeight:600, color:'#9CA3AF', letterSpacing:0.5, textTransform:'uppercase', marginBottom:10 }}>Connect Sources</div>
+      <div style={{ marginBottom:24 }}>
+        <div className="source-card" onClick={() => onShowIngestion('gmail')}>
+          <div className="source-icon" style={{ background:'#FEF2F2' }}><span>📧</span></div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontWeight:700, fontSize:15 }}>Gmail</div>
+            <div style={{ fontSize:12, color:'#6B7280' }}>Auto-import events from emails</div>
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <span style={{ fontSize:11, color:'#10B981', fontWeight:700, background:'#ECFDF5', padding:'2px 8px', borderRadius:100 }}>Connected</span>
+            <Icon name="chevRight" size={16} color="#D1D5DB"/>
+          </div>
+        </div>
+        <div className="source-card" onClick={() => onShowIngestion('whatsapp')}>
+          <div className="source-icon" style={{ background:'#F0FDF4' }}><span>💬</span></div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontWeight:700, fontSize:15 }}>WhatsApp</div>
+            <div style={{ fontSize:12, color:'#6B7280' }}>Forward messages to detect events</div>
+          </div>
+          <Icon name="chevRight" size={16} color="#D1D5DB"/>
+        </div>
+        <div className="source-card" onClick={() => onShowIngestion('sms')}>
+          <div className="source-icon" style={{ background:'#EFF6FF' }}><span>💬</span></div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontWeight:700, fontSize:15 }}>SMS</div>
+            <div style={{ fontSize:12, color:'#6B7280' }}>Scan texts for appointments</div>
+          </div>
+          <Icon name="chevRight" size={16} color="#D1D5DB"/>
+        </div>
+      </div>
+
+      <button className="btn-primary" onClick={() => setInviteModal(true)}>
+        <Icon name="userPlus" size={18} color="white"/>
+        Invite Family Member
+      </button>
+
+      {inviteModal && (
+        <div className="modal-overlay fade-in" onClick={() => setInviteModal(false)}>
+          <div className="modal-sheet slide-up" onClick={e => e.stopPropagation()}>
+            <div className="modal-handle"/>
+            <div className="modal-header">
+              <span style={{ fontSize:18, fontWeight:700 }}>Invite Member</span>
+              <button className="btn-icon" onClick={() => setInviteModal(false)}><Icon name="x" size={18} color="#6B7280"/></button>
+            </div>
+            <div className="modal-body">
+              {sent ? (
+                <div style={{ textAlign:'center', padding:'40px 0' }}>
+                  <div style={{ width:64, height:64, borderRadius:50, background:'#ECFDF5', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
+                    <Icon name="checkCircle" size={32} color="#10B981"/>
+                  </div>
+                  <div style={{ fontSize:18, fontWeight:700 }}>Invite Sent!</div>
+                  <div style={{ color:'#6B7280', marginTop:6 }}>They'll get a WhatsApp & email invite.</div>
+                </div>
+              ) : (
+                <>
+                  <div className="form-group"><label className="form-label">Full Name</label><input className="form-input" placeholder="Name" value={form.name} onChange={e => setForm(p=>({...p,name:e.target.value}))}/></div>
+                  <div className="form-group"><label className="form-label">Email Address</label><input className="form-input" type="email" placeholder="email@example.com" value={form.email} onChange={e => setForm(p=>({...p,email:e.target.value}))}/></div>
+                  <div className="form-group"><label className="form-label">Phone Number</label><input className="form-input" type="tel" placeholder="+44 7700 000000" value={form.phone} onChange={e => setForm(p=>({...p,phone:e.target.value}))}/></div>
+                  <div className="form-group">
+                    <label className="form-label">Role</label>
+                    <div style={{ display:'flex', gap:8 }}>
+                      {['Parent','Kid','Other'].map(r => (
+                        <button key={r} onClick={() => setForm(p=>({...p,role:r}))}
+                          style={{ flex:1, padding:'10px 0', borderRadius:12, border:`2px solid ${form.role===r?'#5B5FED':'#E5E7EB'}`,
+                            background: form.role===r ? '#5B5FED' : 'white', color: form.role===r ? 'white' : '#374151',
+                            fontWeight:600, fontSize:14, cursor:'pointer' }}>
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            {!sent && (
+              <div className="modal-footer">
+                <button className="btn-primary" onClick={handleInvite} disabled={!form.name || !form.email}>
+                  <Icon name="send" size={17} color="white"/>
+                  Send Invite via WhatsApp & Email
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── TAGS TAB ─────────────────────────────────────────────────────────────────
+
+function TagsTab({ pendingTags, approvedTags, onApprove, onReject, onRequestTag }) {
+  const [newTag, setNewTag] = useState('');
+  const [requesting, setRequesting] = useState(false);
+
+  const handleRequest = () => {
+    if (!newTag.trim()) return;
+    setRequesting(true);
+    setTimeout(() => { onRequestTag(newTag.trim().toUpperCase()); setNewTag(''); setRequesting(false); }, 800);
+  };
+
+  return (
+    <div className="content-scroll" style={{ padding:'0 16px 100px' }}>
+      {/* Approved tags */}
+      <div style={{ padding:'16px 0 8px' }}>
+        <div style={{ fontSize:12, fontWeight:600, color:'#9CA3AF', letterSpacing:0.5, textTransform:'uppercase', marginBottom:12 }}>Active Tags ({approvedTags.length})</div>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+          {approvedTags.map(t => (
+            <div key={t} style={{ display:'flex', alignItems:'center', gap:6, background:getTagColor(t)+'18', border:`1.5px solid ${getTagColor(t)}30`, borderRadius:100, padding:'6px 12px' }}>
+              <div style={{ width:8, height:8, borderRadius:50, background:getTagColor(t) }}/>
+              <span style={{ fontSize:12, fontWeight:700, color:getTagColor(t) }}>{t}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Pending approvals */}
+      {pendingTags.length > 0 && (
+        <div style={{ marginTop:24 }}>
+          <div style={{ fontSize:12, fontWeight:600, color:'#9CA3AF', letterSpacing:0.5, textTransform:'uppercase', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
+            Pending Approval
+            <span style={{ background:'#FF6B6B', color:'white', width:18, height:18, borderRadius:50, fontSize:10, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center' }}>{pendingTags.length}</span>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            {pendingTags.map(t => (
+              <div key={t.id} className="card-sm">
+                <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:8 }}>
+                  <div>
+                    <div style={{ fontWeight:700, fontSize:16, marginBottom:3 }}>{t.name}</div>
+                    <div style={{ fontSize:12, color:'#6B7280' }}>Requested by {t.submittedName}</div>
+                    {t.note && <div style={{ fontSize:12, color:'#9CA3AF', marginTop:3 }}>{t.note}</div>}
+                  </div>
+                  <span style={{ background:'#FEF3C7', color:'#D97706', fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:6 }}>PENDING</span>
+                </div>
+                <div style={{ display:'flex', gap:8 }}>
+                  <button onClick={() => onReject(t.id)} style={{ flex:1, padding:'10px', borderRadius:12, border:'1.5px solid #E5E7EB', background:'white', color:'#DC2626', fontWeight:600, fontSize:13, cursor:'pointer' }}>
+                    Decline
+                  </button>
+                  <button onClick={() => onApprove(t)} style={{ flex:2, padding:'10px', borderRadius:12, border:'none', background:'#5B5FED', color:'white', fontWeight:600, fontSize:13, cursor:'pointer' }}>
+                    ✓ Approve Tag
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Request new tag */}
+      <div style={{ marginTop:28 }}>
+        <div style={{ fontSize:12, fontWeight:600, color:'#9CA3AF', letterSpacing:0.5, textTransform:'uppercase', marginBottom:12 }}>Request New Tag</div>
+        <div className="card-sm">
+          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+            <input className="form-input" placeholder="e.g. SPORTS, SCHOOL RUN…" value={newTag} onChange={e => setNewTag(e.target.value.toUpperCase())} style={{ flex:1, borderRadius:12, padding:'12px 14px', fontSize:14 }}/>
+            <button className="btn-primary" style={{ width:'auto', padding:'12px 18px', borderRadius:12, fontSize:14 }} onClick={handleRequest} disabled={!newTag.trim() || requesting}>
+              {requesting ? <div className="spinner"/> : 'Request'}
+            </button>
+          </div>
+          <p style={{ fontSize:11, color:'#9CA3AF', marginTop:10 }}>⚡ New tags go to Hub Admin (Punit) for approval before becoming active.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SETTINGS TAB ─────────────────────────────────────────────────────────────
+
+function SettingsTab() {
+  const [notifs, setNotifs] = useState({ whatsapp:true, push:true, email:false });
+  const [digest, setDigest] = useState('morning');
+
+  const toggle = k => setNotifs(p => ({...p, [k]: !p[k]}));
+
+  return (
+    <div className="content-scroll" style={{ padding:'0 16px 100px' }}>
+      {/* Profile */}
+      <div className="card" style={{ margin:'16px 0', display:'flex', gap:14, alignItems:'center' }}>
+        <MemberAvatar member={FAMILY[0]} size="lg"/>
+        <div>
+          <div style={{ fontSize:18, fontWeight:700 }}>Punit Bafna</div>
+          <div style={{ fontSize:12, color:'#6B7280', marginTop:2 }}>punit.bafna@gmail.com</div>
+          <span style={{ background:'#5B5FED', color:'white', fontSize:9, padding:'2px 8px', borderRadius:6, fontWeight:700, marginTop:4, display:'inline-block' }}>HUB ADMIN</span>
+        </div>
+      </div>
+
+      {/* Notifications */}
+      <div style={{ fontSize:12, fontWeight:600, color:'#9CA3AF', letterSpacing:0.5, textTransform:'uppercase', marginBottom:10 }}>Notifications</div>
+      <div className="card" style={{ marginBottom:20 }}>
+        {[
+          { key:'whatsapp', icon:'💬', label:'WhatsApp Alerts', sub:'Event updates via WhatsApp' },
+          { key:'push', icon:'🔔', label:'Push Notifications', sub:'In-app notifications' },
+          { key:'email', icon:'📧', label:'Email Digest', sub:'Daily summary via email' },
+        ].map((item, i) => (
+          <div key={item.key} onClick={() => toggle(item.key)}
+            style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom: i<2 ? '1px solid #F3F4F6' : 'none', cursor:'pointer' }}>
+            <span style={{ fontSize:20 }}>{item.icon}</span>
+            <div style={{ flex:1 }}>
+              <div style={{ fontWeight:600, fontSize:15 }}>{item.label}</div>
+              <div style={{ fontSize:12, color:'#6B7280' }}>{item.sub}</div>
+            </div>
+            <div style={{ width:44, height:26, borderRadius:13, background: notifs[item.key] ? '#5B5FED' : '#E5E7EB', position:'relative', transition:'all 0.2s', cursor:'pointer' }}>
+              <div style={{ width:20, height:20, borderRadius:50, background:'white', position:'absolute', top:3, left: notifs[item.key] ? 21 : 3, transition:'all 0.2s', boxShadow:'0 1px 4px rgba(0,0,0,0.15)' }}/>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Digest */}
+      <div style={{ fontSize:12, fontWeight:600, color:'#9CA3AF', letterSpacing:0.5, textTransform:'uppercase', marginBottom:10 }}>Daily Digest Timing</div>
+      <div className="card" style={{ marginBottom:20 }}>
+        <div className="seg-ctrl">
+          {[{ k:'morning', l:'7 AM' }, { k:'midday', l:'12 PM' }, { k:'evening', l:'6 PM' }].map(o => (
+            <button key={o.k} className={`seg-btn${digest===o.k?' active':''}`} onClick={() => setDigest(o.k)}>{o.l}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Household */}
+      <div style={{ fontSize:12, fontWeight:600, color:'#9CA3AF', letterSpacing:0.5, textTransform:'uppercase', marginBottom:10 }}>Household</div>
+      <div className="card" style={{ marginBottom:20 }}>
+        {[
+          { icon:'shield', label:'Admin Permissions', sub:'You control tag approvals & member access' },
+          { icon:'download', label:'Export Calendar', sub:'Download as .ics or PDF' },
+          { icon:'bell', label:'Quiet Hours', sub:'No alerts 10pm – 7am' },
+        ].map((item, i) => (
+          <div key={item.label} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom: i<2 ? '1px solid #F3F4F6' : 'none', cursor:'pointer' }}>
+            <div style={{ width:36, height:36, borderRadius:10, background:'#F0F4FF', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <Icon name={item.icon} size={17} color="#5B5FED"/>
+            </div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontWeight:600, fontSize:14 }}>{item.label}</div>
+              <div style={{ fontSize:12, color:'#6B7280' }}>{item.sub}</div>
+            </div>
+            <Icon name="chevRight" size={15} color="#D1D5DB"/>
+          </div>
+        ))}
+      </div>
+
+      <button className="btn-secondary" style={{ marginBottom:32, color:'#DC2626', borderColor:'#FEE2E2' }}>Sign Out</button>
+    </div>
+  );
+}
+
+// ─── INGESTION MODAL ──────────────────────────────────────────────────────────
+
+function IngestionModal({ source, onClose, onImport }) {
+  const [step, setStep] = useState('connect'); // connect | scanning | results
+  const [selectedItems, setSelectedItems] = useState([]);
+
+  const gmailEvents = [
+    { id:'g1', title:'Dentist appointment - Dr. Kapoor', snippet:'...your appointment on 15 May at 2:30 PM...', date:'2026-05-15', time:'14:30', tag:'MEDICAL', confidence:95 },
+    { id:'g2', title:'RE: Dinner reservation - Nobu', snippet:'...confirmed for Friday 22nd May, 8pm, party of 4...', date:'2026-05-22', time:'20:00', tag:'DINNER', confidence:88 },
+    { id:'g3', title:'Emirates - Your booking EK005', snippet:'...flight departs Dubai 21:00 on 20 April...', date:'2026-04-20', time:'21:00', tag:'TRAVEL', confidence:98 },
+  ];
+
+  const waEvents = [
+    { id:'w1', title:'School Play – reminder from school group', snippet:'"Don\'t forget Mia\'s play on Sunday 26th Apr, 2pm"', date:'2026-04-26', time:'14:00', tag:'KIDS CLASSES', confidence:82 },
+    { id:'w2', title:'Birthday dinner RSVP – Sharma family', snippet:'"We\'re all confirmed for the 25th! See you at Nobu 8pm"', date:'2026-04-25', time:'20:00', tag:'DINNER', confidence:79 },
+  ];
+
+  const items = source === 'gmail' ? gmailEvents : waEvents;
+  const config = source === 'gmail'
+    ? { label:'Gmail', icon:'📧', color:'#DC2626', btnLabel:'Connect Google Account', desc:'Scan your inbox for event-related emails — flight bookings, dinner reservations, invites, appointments.' }
+    : { label:'WhatsApp', icon:'💬', color:'#25D366', btnLabel:'Set Up WhatsApp Forwarding', desc:'Forward messages from WhatsApp to our secure inbox, or share the group bot number to auto-detect events.' };
+
+  const toggle = (id) => setSelectedItems(p => p.includes(id) ? p.filter(x=>x!==id) : [...p, id]);
+
+  const handleScan = () => {
+    setStep('scanning');
+    setTimeout(() => { setStep('results'); setSelectedItems(items.map(i=>i.id)); }, 2200);
+  };
+
+  return (
+    <div className="modal-overlay fade-in" onClick={onClose}>
+      <div className="modal-sheet slide-up" onClick={e => e.stopPropagation()}>
+        <div className="modal-handle"/>
+        <div className="modal-header">
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <span style={{ fontSize:22 }}>{config.icon}</span>
+            <span style={{ fontSize:18, fontWeight:700 }}>{config.label} Import</span>
+          </div>
+          <button className="btn-icon" onClick={onClose}><Icon name="x" size={18} color="#6B7280"/></button>
+        </div>
+        <div className="modal-body">
+          {step === 'connect' && (
+            <div className="fade-up">
+              <p style={{ color:'#6B7280', fontSize:15, lineHeight:1.6, marginBottom:28 }}>{config.desc}</p>
+              <div style={{ background:'#F8FAFC', borderRadius:16, padding:16, marginBottom:24 }}>
+                {['Events auto-detected with AI', 'You review before adding', 'Family notified instantly'].map(f => (
+                  <div key={f} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0' }}>
+                    <Icon name="checkCircle" size={18} color="#10B981"/>
+                    <span style={{ fontSize:14, color:'#374151' }}>{f}</span>
+                  </div>
+                ))}
+              </div>
+              <button className="btn-primary" style={{ background: config.color }} onClick={handleScan}>
+                {config.btnLabel}
+              </button>
+            </div>
+          )}
+
+          {step === 'scanning' && (
+            <div style={{ textAlign:'center', padding:'48px 0' }}>
+              <div style={{ width:64, height:64, borderRadius:50, background:'#F0F4FF', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px', animation:'pulse 1.5s ease infinite' }}>
+                <span style={{ fontSize:28 }}>{config.icon}</span>
+              </div>
+              <div style={{ fontSize:17, fontWeight:700, marginBottom:8 }}>Scanning for events…</div>
+              <div style={{ color:'#9CA3AF', fontSize:14 }}>AI is reading your messages</div>
+            </div>
+          )}
+
+          {step === 'results' && (
+            <div className="fade-up">
+              <div style={{ fontSize:13, fontWeight:600, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:0.5, marginBottom:12 }}>
+                {items.length} events found · select to import
+              </div>
+              {items.map(item => (
+                <div key={item.id} onClick={() => toggle(item.id)}
+                  style={{ padding:14, borderRadius:16, border:`2px solid ${selectedItems.includes(item.id)?'#5B5FED':'#E5E7EB'}`,
+                    background: selectedItems.includes(item.id)?'#F5F6FF':'white', marginBottom:10, cursor:'pointer', transition:'all 0.15s' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
+                    <div style={{ fontWeight:700, fontSize:14, flex:1, paddingRight:8 }}>{item.title}</div>
+                    <div style={{ width:20, height:20, borderRadius:6, background: selectedItems.includes(item.id)?'#5B5FED':'#F3F4F6', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                      {selectedItems.includes(item.id) && <Icon name="check" size={12} color="white"/>}
+                    </div>
+                  </div>
+                  <div style={{ fontSize:12, color:'#9CA3AF', fontStyle:'italic', marginBottom:8 }}>"{item.snippet}"</div>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <TagPill tag={item.tag}/>
+                    <span style={{ fontSize:11, color:'#6B7280' }}>{new Date(item.date+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'})} · {formatTime(item.time)}</span>
+                    <span style={{ marginLeft:'auto', fontSize:11, fontWeight:700, color:'#10B981' }}>{item.confidence}% sure</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        {step === 'results' && (
+          <div className="modal-footer">
+            <button className="btn-primary" onClick={() => { onImport(items.filter(i=>selectedItems.includes(i.id))); onClose(); }} disabled={!selectedItems.length}>
+              <Icon name="checkCircle" size={18} color="white"/>
+              Import {selectedItems.length} Event{selectedItems.length!==1?'s':''}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── NOTIFICATION PANEL ───────────────────────────────────────────────────────
+
+function NotificationPanel({ notifs, onClose }) {
+  return (
+    <div className="modal-overlay fade-in" onClick={onClose}>
+      <div className="modal-sheet slide-up" onClick={e=>e.stopPropagation()}>
+        <div className="modal-handle"/>
+        <div className="modal-header">
+          <span style={{ fontSize:18, fontWeight:700 }}>Notifications</span>
+          <button className="btn-icon" onClick={onClose}><Icon name="x" size={18} color="#6B7280"/></button>
+        </div>
+        <div className="modal-body">
+          {notifs.length === 0 ? (
+            <div style={{ textAlign:'center', padding:'40px 0', color:'#9CA3AF' }}>
+              <Icon name="bell" size={40} color="#E5E7EB"/>
+              <p style={{ marginTop:12 }}>No notifications yet</p>
+            </div>
+          ) : notifs.map((n, i) => (
+            <div key={i} style={{ display:'flex', gap:12, padding:'12px 0', borderBottom: i<notifs.length-1?'1px solid #F3F4F6':'none' }}>
+              <div style={{ width:40, height:40, borderRadius:12, background:'#F0F4FF', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <span style={{ fontSize:18 }}>{n.icon}</span>
+              </div>
+              <div>
+                <div style={{ fontWeight:600, fontSize:14 }}>{n.title}</div>
+                <div style={{ fontSize:12, color:'#6B7280', marginTop:2 }}>{n.body}</div>
+                <div style={{ fontSize:11, color:'#9CA3AF', marginTop:3 }}>{n.time}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+
+function App() {
+  const [screen, setScreen] = useState('login');
+  const [tab, setTab] = useState('calendar');
+  const [events, setEvents] = useState(INITIAL_EVENTS);
+  const [pendingTags, setPendingTags] = useState(PENDING_TAGS);
+  const [approvedTags, setApprovedTags] = useState(Object.keys(TAG_COLORS));
+  const [toast, setToast] = useState(null);
+  const [eventModal, setEventModal] = useState(null); // null | 'add' | event object
+  const [detailEvent, setDetailEvent] = useState(null);
+  const [ingestionSource, setIngestionSource] = useState(null);
+  const [notifPanel, setNotifPanel] = useState(false);
+  const [notifications, setNotifications] = useState([
+    { icon:'📅', title:'Priya added an event', body:'Yoga class – Tuesday 7pm', time:'2 min ago' },
+    { icon:'✈️', title:'Upcoming: Dubai Trip', body:'Tomorrow at 08:15 · Heathrow T3', time:'1 hr ago' },
+    { icon:'🎂', title:"Don't forget! Priya's Birthday", body:'25 Apr · Nobu, Park Lane', time:'3 hr ago' },
+  ]);
+
+  const showToast = (msg, icon) => {
+    setToast({ msg, icon });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleSaveEvent = (form) => {
+    if (eventModal && eventModal !== 'add') {
+      setEvents(prev => prev.map(e => e.id === form.id ? form : e));
+      showToast('Event updated', '✏️');
+      const n = { icon:'✏️', title:`${FAMILY[0].name} updated an event`, body: form.title, time:'Just now' };
+      setNotifications(p => [n, ...p]);
+    } else {
+      const newEv = { ...form, id: Date.now() };
+      setEvents(prev => [...prev, newEv]);
+      showToast('Event added & family notified!', '📅');
+      const n = { icon:'📅', title:`${FAMILY[0].name} added an event`, body: form.title, time:'Just now' };
+      setNotifications(p => [n, ...p]);
+    }
+    setEventModal(null);
+    setDetailEvent(null);
+  };
+
+  const handleDeleteEvent = (id) => {
+    setEvents(prev => prev.filter(e => e.id !== id));
+    setDetailEvent(null);
+    showToast('Event deleted', '🗑️');
+  };
+
+  const handleApproveTag = (tag) => {
+    setPendingTags(p => p.filter(t => t.id !== tag.id));
+    setApprovedTags(p => [...p, tag.name]);
+    showToast(`Tag "${tag.name}" approved!`, '✅');
+    const n = { icon:'🏷️', title:'Tag approved', body:`"${tag.name}" is now available to everyone`, time:'Just now' };
+    setNotifications(prev => [n, ...prev]);
+  };
+
+  const handleRejectTag = (id) => {
+    setPendingTags(p => p.filter(t => t.id !== id));
+    showToast('Tag declined', '❌');
+  };
+
+  const handleRequestTag = (name) => {
+    const t = { id: 't'+Date.now(), name, submittedBy:1, submittedName:'Punit', note:'' };
+    setPendingTags(p => [...p, t]);
+    showToast(`"${name}" sent for approval`, '🏷️');
+  };
+
+  const handleImport = (items) => {
+    const imported = items.map(i => ({ id: Date.now()+Math.random(), title: i.title, date: i.date, time: i.time, endTime:'', tag: i.tag, members:[1,2,3,4], note:'Imported automatically', location:'' }));
+    setEvents(p => [...p, ...imported]);
+    showToast(`${items.length} event${items.length>1?'s':''} imported!`, '⚡');
+  };
+
+  const handleNotifyFamily = () => {
+    showToast('Family notified via WhatsApp!', '💬');
+    const n = { icon:'💬', title:'WhatsApp sent to 3 members', body:'Event details shared with Priya, Arjun & Mia', time:'Just now' };
+    setNotifications(p => [n, ...p]);
+    setDetailEvent(null);
+  };
+
+  const pendingCount = pendingTags.length;
+
+  if (screen === 'login') return <LoginScreen onLogin={() => setScreen('app')}/>;
+
+  const TABS = [
+    { id:'calendar', label:'Calendar', icon:'calendar' },
+    { id:'events', label:'Events', icon:'list' },
+    { id:'family', label:'Family', icon:'users' },
+    { id:'tags', label:'Tags', icon:'tag', badge: pendingCount },
+    { id:'settings', label:'Settings', icon:'settings' },
+  ];
+
+  return (
+    <div className="screen">
+      {/* Header */}
+      <div className="app-header">
+        <div>
+          <div className="header-title">
+            {tab === 'calendar' && '📅 Calendar'}
+            {tab === 'events' && '✦ All Events'}
+            {tab === 'family' && '👨‍👩‍👧‍👦 Family'}
+            {tab === 'tags' && '🏷️ Tags'}
+            {tab === 'settings' && '⚙️ Settings'}
+          </div>
+          <div className="header-sub">Bafna Family · April 2026</div>
+        </div>
+        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          <button className="btn-icon" style={{ position:'relative' }} onClick={() => setNotifPanel(true)}>
+            <Icon name="bell" size={20} color="#374151"/>
+            {notifications.length > 0 && <div style={{ position:'absolute', top:6, right:6, width:8, height:8, borderRadius:50, background:'#FF6B6B', border:'2px solid white' }}/>}
+          </button>
+          <MemberAvatar member={FAMILY[0]} size="sm"/>
+        </div>
+      </div>
+
+      {/* Tab content */}
+      <div style={{ flex:1, overflow:'hidden', position:'relative' }}>
+        {tab === 'calendar' && <CalendarTab events={events} onEventClick={setDetailEvent} onAddEvent={() => setEventModal('add')}/>}
+        {tab === 'events' && <EventsTab events={events} onEventClick={setDetailEvent} onAddEvent={() => setEventModal('add')}/>}
+        {tab === 'family' && <FamilyTab onShowIngestion={setIngestionSource}/>}
+        {tab === 'tags' && <TagsTab pendingTags={pendingTags} approvedTags={approvedTags} onApprove={handleApproveTag} onReject={handleRejectTag} onRequestTag={handleRequestTag}/>}
+        {tab === 'settings' && <SettingsTab/>}
+      </div>
+
+      {/* FAB */}
+      {(tab === 'calendar' || tab === 'events') && (
+        <button className="fab" onClick={() => setEventModal('add')}>
+          <Icon name="plus" size={24} color="white"/>
+        </button>
+      )}
+
+      {/* Bottom nav */}
+      <div className="bottom-nav">
+        {TABS.map(t => (
+          <div key={t.id} className={`nav-item${tab===t.id?' active':''}`} onClick={() => setTab(t.id)}>
+            <div style={{ position:'relative' }}>
+              <Icon name={t.icon} size={22} color={tab===t.id?'white':'rgba(255,255,255,0.35)'}/>
+              {t.badge > 0 && <div className="nav-badge" style={{ position:'absolute', top:-4, right:-8 }}>{t.badge}</div>}
+            </div>
+            <span>{t.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Modals */}
+      {detailEvent && (
+        <EventDetailModal event={detailEvent} onClose={() => setDetailEvent(null)}
+          onEdit={() => { setEventModal(detailEvent); setDetailEvent(null); }}
+          onDelete={handleDeleteEvent} onNotify={handleNotifyFamily}/>
+      )}
+      {eventModal && (
+        <EventModal event={eventModal === 'add' ? null : eventModal}
+          existingTags={approvedTags} onClose={() => setEventModal(null)} onSave={handleSaveEvent}/>
+      )}
+      {ingestionSource && (
+        <IngestionModal source={ingestionSource} onClose={() => setIngestionSource(null)} onImport={handleImport}/>
+      )}
+      {notifPanel && (
+        <NotificationPanel notifs={notifications} onClose={() => setNotifPanel(false)}/>
+      )}
+
+      {/* Toast */}
+      {toast && <Toast msg={toast.msg} icon={toast.icon}/>}
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
